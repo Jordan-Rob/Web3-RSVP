@@ -112,4 +112,40 @@ contract Web3RSVP {
         require(sent, "Failed to send Ether");
     
     }
+
+    function withdrawUnclaimedDeposits(bytes32 eventId) external {
+        // lookup event
+        CreateEvent memory myEvent = idToEvent[eventId];
+
+        // check that the paidOut boolean still equals false AKA the money hasn't already been paid out
+        require(myEvent.paidOut == false, "ALREADY PAID");
+
+        // check if it's been 7 days past myEvent.eventTimestamp
+        require(
+            block.timestamp >= (myEvent.eventTimestamp + 7 days),
+            "TOO EARLY"
+        );
+
+        // only the event owner can withdraw
+        require(msg.sender == myEvent.eventOwner, "MUST BE EVENT OWNER");
+    
+        // calculate how many people didn't claim by comparing
+        uint256 unclaimed = myEvent.confirmedRSVPs.length - myEvent.claimedRSVPs.length
+
+        uint256 payout = unclaimed * myEvent.deposit;
+
+        // mark as paid before sending to avoid reentrancy attack
+        myEvent.paidOut = true;
+
+        // send the payout to the owner
+        (bool, sent) = msg.sender.call{value: payout}("")
+
+        // if this fails
+        if (!sent) {
+            myEvent.paidOut == false;
+        }
+
+        require(sent, "Failed to send Ether");
+    }
+
 }
