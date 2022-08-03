@@ -81,17 +81,17 @@ contract Web3RSVP {
         CreateEvent storage myEvent = idToEvent[eventId];
 
         // transfer deposit to our contract / require that they send in enough ETH to cover the deposit requirement of this specific event
-        require(msg.value == myEvent.deposit, "NOT ENOUGH")
+        require(msg.value == myEvent.deposit, "NOT ENOUGH");
 
         // require that the event hasn't already happened (<eventTimestamp)
-        require(block.timestamp <= myEvent.eventTimestamp, "EVENT ALREADY HAPPENED")
+        require(block.timestamp <= myEvent.eventTimestamp, "EVENT ALREADY HAPPENED");
 
         // make sure event is under max capacity
-        require(myEvent.confirmedRSVPs.length < myEvent.maxCapacity, "This event has already reached capacity")
+        require(myEvent.confirmedRSVPs.length < myEvent.maxCapacity, "This event has already reached capacity");
 
         // require that msg.sender isn't already in myEvent.confirmedRSVPs AKA hasn't already RSVP'd
         for (uint256 i = 0; i < myEvent.confirmedRSVPs.length; i++) {
-            require(myEvent.confirmedRSVPs[i] != msg.sender, "ALREADY CONFIRMED")
+            require(myEvent.confirmedRSVPs[i] != msg.sender, "ALREADY CONFIRMED");
         }
 
         myEvent.confirmedRSVPs.push(payable(msg.sender));
@@ -104,10 +104,10 @@ contract Web3RSVP {
         CreateEvent storage myEvent = idToEvent[eventId];
 
         // require that msg.sender is the owner of the event - only the host should be able to check people in
-        require(msg.sender == myEvent.eventOwner, "NOT AUTHORIZED")
+        require(msg.sender == myEvent.eventOwner, "NOT AUTHORIZED");
 
         // require that attendee trying to check in actually RSVP'd
-        address rsvpConfirm
+        address rsvpConfirm;
 
         for (uint256 i = 0; i < myEvent.confirmedRSVPs.length; i++) {
             if(myEvent.confirmedRSVPs[i] == attendee){
@@ -173,7 +173,7 @@ contract Web3RSVP {
         require(msg.sender == myEvent.eventOwner, "MUST BE EVENT OWNER");
     
         // calculate how many people didn't claim by comparing
-        uint256 unclaimed = myEvent.confirmedRSVPs.length - myEvent.claimedRSVPs.length
+        uint256 unclaimed = myEvent.confirmedRSVPs.length - myEvent.claimedRSVPs.length;
 
         uint256 payout = unclaimed * myEvent.deposit;
 
@@ -181,7 +181,7 @@ contract Web3RSVP {
         myEvent.paidOut = true;
 
         // send the payout to the owner
-        (bool, sent) = msg.sender.call{value: payout}("")
+        (bool sent,) = msg.sender.call{value: payout}("");
 
         // if this fails
         if (!sent) {
