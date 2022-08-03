@@ -2,6 +2,23 @@
 pragma solidity ^0.8.0;
 
 contract Web3RSVP {
+
+    event NewEventCreated(
+        bytes32 eventID,
+        address creatorAddress,
+        uint256 eventTimestamp,
+        uint256 maxCapacity,
+        uint256 deposit,
+        string eventDataCID
+    );
+
+    event NewRSVP(bytes32 eventID, address attendeeAddress);
+
+    event ConfirmedAttendee(bytes32 eventID, address attendeeAddress);
+
+    event DepositsPaidOut(bytes32 eventID);
+
+
     struct CreateEvent {
         bytes32 eventId;
         string eventDataCID;
@@ -48,6 +65,15 @@ contract Web3RSVP {
             claimedRSVPs,
             false
         );
+
+        emit NewEventCreated(
+            eventId,
+            msg.sender,
+            eventTimestamp,
+            maxCapacity,
+            deposit,
+            eventDataCID
+        );
     }
 
     function createNewRSVP(bytes32 eventId) external payable {
@@ -69,6 +95,8 @@ contract Web3RSVP {
         }
 
         myEvent.confirmedRSVPs.push(payable(msg.sender));
+
+        emit NewRSVP(eventId, msg.sender);
     }
 
     function confirmAttendee(bytes32 eventId, address attendee) public {
@@ -110,7 +138,22 @@ contract Web3RSVP {
         }
 
         require(sent, "Failed to send Ether");
+
+        emit ConfirmedAttendee(eventId, attendee);
     
+    }
+
+    function confirmAllAttendees(bytes32 eventId) external {
+        // look up event from our struct with the eventId
+        CreateEvent memory myEvent = idToEvent[eventId];
+
+        // make sure you require that msg.sender is the owner of the event
+        require(msg.sender == myEvent.eventOwner, "NOT AUTHORIZED");
+
+        // confirm each attendee in the rsvp array
+        for (uint8 i = 0; i < myEvent.confirmedRSVPs.length; i++) {
+            confirmAttendee(eventId, myEvent.confirmedRSVPs[i]);
+        }
     }
 
     function withdrawUnclaimedDeposits(bytes32 eventId) external {
@@ -146,6 +189,8 @@ contract Web3RSVP {
         }
 
         require(sent, "Failed to send Ether");
+
+        emit DepositsPaidOut(eventId);
     }
 
 }
